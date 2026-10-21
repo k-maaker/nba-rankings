@@ -1,0 +1,41 @@
+name: Update NBA rankings
+
+# Started every morning by cron-job.org (GitHub's own scheduler runs hours
+# late), or by hand with the "Run workflow" button.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nba-rankings
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install numpy pandas openpyxl
+
+      - name: Pull latest BigDataBall file from Dropbox
+        env:
+          DROPBOX_FOLDER_URL: ${{ secrets.DROPBOX_FOLDER_URL }}
+        run: python fetch_bigdataball.py
+
+      - name: Rebuild rankings
+        run: python nba_rankings.py
+
+      - name: Save updated data and page
+        run: |
+          git config user.name "rankings-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/games.csv data/history.csv docs/
+          git diff --cached --quiet || git commit -m "Rankings update $(TZ=America/New_York date +%F)"
+          git push

@@ -1,0 +1,4 @@
+# BigDataBall's raw daily file is downloaded fresh each run; keeping a
+# 1 MB copy per day in the repo history would bloat it fast.
+data/bigdataball/
+__pycache__/
